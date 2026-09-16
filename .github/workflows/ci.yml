@@ -177,7 +177,8 @@ jobs:
         # CLI itself is MIT, so run the official image directly instead.
         run: |
           docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest \
-            detect --source /repo --redact --no-banner --verbose
+            detect --source /repo --config /repo/.gitleaks.toml \
+            --redact --no-banner --verbose
 
   # -------------------------------------------------------- openapi drift ----
   openapi-drift:
