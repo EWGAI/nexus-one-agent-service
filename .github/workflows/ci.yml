@@ -1,0 +1,235 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Offline providers so no job needs credentials.
+  JWT_SECRET_KEY: ci-secret-key-that-is-definitely-long-enough
+  LLM_PROVIDER: fake
+  EMBEDDING_PROVIDER: fake
+  VECTOR_STORE: chroma
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  # ---------------------------------------------------------------- lint ----
+  lint:
+    name: lint (ruff check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - run: uv python install 3.12
+      - run: uv pip install --system -e ".[dev]"
+      - run: ruff check --output-format=github agent_service tests scripts
+
+  format:
+    name: format (ruff format --check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - run: uv python install 3.12
+      - run: uv pip install --system -e ".[dev]"
+      - run: ruff format --check --diff agent_service tests scripts
+
+  typecheck:
+    name: typecheck (mypy --strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - run: uv python install 3.12
+      - run: uv pip install --system -e ".[dev]"
+      - run: mypy --strict agent_service
+
+  spelling:
+    name: spelling (codespell)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - run: uv python install 3.12
+      - run: uv pip install --system -e ".[dev]"
+      - name: codespell
+        run: codespell agent_service tests scripts README.md .env.example
+      - name: typos (alternative spell checker)
+        uses: crate-ci/typos@master
+        continue-on-error: true
+        with:
+          files: agent_service tests scripts README.md
+
+  # --------------------------------------------------------------- tests ----
+  tests:
+    name: tests (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    # The `secrets` context is unavailable in step-level `if`, so surface it as env.
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - run: uv python install ${{ matrix.python-version }}
+      - name: Install (chroma + faiss + pinecone SDK)
+        run: uv pip install --system -e ".[dev,pinecone]"
+      - name: Run tests with coverage
+        # Chroma and FAISS run locally against the deterministic fake embedding
+        # model. Pinecone tests are marked `integration` and self-skip unless the
+        # secret below is present.
+        env:
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_INDEX: ${{ secrets.PINECONE_INDEX }}
+        run: |
+          pytest --cov=agent_service --cov-report=term-missing \
+                 --cov-report=xml:coverage.xml --cov-fail-under=85
+      - name: Upload coverage XML
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-${{ matrix.python-version }}
+          path: coverage.xml
+          if-no-files-found: warn
+      - name: Upload to Codecov
+        if: env.CODECOV_TOKEN != ''
+        uses: codecov/codecov-action@v4
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+  # ------------------------------------------------------------ security ----
+  security:
+    name: security (bandit, pip-audit, gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - run: uv python install 3.12
+      - run: uv pip install --system -e ".[dev]"
+      - name: bandit
+        run: bandit -c pyproject.toml -r agent_service
+      - name: pip-audit
+        # Advisories with no fixed release upstream (ChromaDB *server* auth /
+        # RBAC issues; this service uses the embedded client by default).
+        # Re-review on every Dependabot bump - see the Makefile for details.
+        run: |
+          pip-audit --progress-spinner off \
+            --ignore-vuln PYSEC-2026-311 \
+            --ignore-vuln PYSEC-2026-3813 \
+            --ignore-vuln PYSEC-2026-3814 \
+            --ignore-vuln PYSEC-2026-3815
+      - name: gitleaks (secret scanning)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # -------------------------------------------------------- openapi drift ----
+  openapi-drift:
+    name: openapi drift
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: pyproject.toml
+      - run: uv python install 3.12
+      - run: uv pip install --system -e ".[dev]"
+      - name: Regenerate and diff openapi.json
+        run: |
+          python scripts/export_openapi.py --output /tmp/openapi.json
+          if ! diff -u openapi.json /tmp/openapi.json; then
+            echo "::error::openapi.json is out of date - run 'make openapi' and commit the result."
+            exit 1
+          fi
+
+  # --------------------------------------------------------------- docker ----
+  docker:
+    name: docker build + smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: nexusone/agent-service:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Run container
+        run: |
+          docker run -d --name agent-service-ci -p 8000:8000 \
+            -e JWT_SECRET_KEY="$JWT_SECRET_KEY" \
+            -e LLM_PROVIDER=fake -e EMBEDDING_PROVIDER=fake -e VECTOR_STORE=chroma \
+            nexusone/agent-service:ci
+      - name: Wait for /health
+        run: |
+          for _ in $(seq 1 60); do
+            curl -fsS http://localhost:8000/health && exit 0
+            sleep 2
+          done
+          docker logs agent-service-ci
+          exit 1
+      - name: Smoke test (mint token -> ingest -> search -> chat)
+        run: |
+          python -m pip install --quiet PyJWT
+          bash scripts/smoke_test.sh
+        env:
+          BASE_URL: http://localhost:8000
+          PYTHON: python
+      - name: Container logs
+        if: always()
+        run: docker logs agent-service-ci || true
+      - name: Clean up
+        if: always()
+        run: docker rm -f agent-service-ci || true
+
+  # ---------------------------------------------------- dependency review ----
+  dependency-review:
+    name: dependency review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high

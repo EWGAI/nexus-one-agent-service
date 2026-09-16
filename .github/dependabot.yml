@@ -1,0 +1,35 @@
+version: 2
+
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "python"]
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    groups:
+      langchain:
+        patterns: ["langchain*", "langgraph*"]
+      vector-stores:
+        patterns: ["chromadb", "faiss-cpu", "pinecone*"]
+      dev-tooling:
+        patterns: ["ruff", "mypy", "pytest*", "bandit*", "codespell", "pre-commit", "pip-audit"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    labels: ["dependencies", "ci"]
+    commit-message:
+      prefix: "ci"
+
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    labels: ["dependencies", "docker"]
