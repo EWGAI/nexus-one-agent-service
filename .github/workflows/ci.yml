@@ -173,9 +173,11 @@ jobs:
             --ignore-vuln PYSEC-2026-3814 \
             --ignore-vuln PYSEC-2026-3815
       - name: gitleaks (secret scanning)
-        uses: gitleaks/gitleaks-action@v2
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # The gitleaks *action* requires a paid licence on org-owned repos; the
+        # CLI itself is MIT, so run the official image directly instead.
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest \
+            detect --source /repo --redact --no-banner --verbose
 
   # -------------------------------------------------------- openapi drift ----
   openapi-drift:
