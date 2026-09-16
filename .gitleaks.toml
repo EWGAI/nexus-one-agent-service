@@ -1,0 +1,17 @@
+title = "NexusOne Agent Service"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = """
+Deterministic placeholder credentials. The service runs offline in CI and in the
+test suite (LLM_PROVIDER=fake, EMBEDDING_PROVIDER=fake), so these values grant no
+access to anything. Real secrets are injected via the environment at runtime.
+"""
+regexes = [
+  '''test-secret-key-that-is-long-enough-32ch''',
+  '''ci-secret-key-that-is-definitely-long-enough''',
+  '''local-development-secret-change-me-32chars''',
+  '''change-me-to-a-long-random-string-at-least-32-chars''',
+]
