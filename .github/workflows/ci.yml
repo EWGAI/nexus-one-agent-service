@@ -1,17 +1,19 @@
 name: CI
 
 on:
-  push:
-    branches: ["**"]
   pull_request:
-    branches: ["**"]
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Never cancel a run on main; superseded PR runs are safe to drop.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   # Offline providers so no job needs credentials.
