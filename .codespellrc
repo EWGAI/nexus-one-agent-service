@@ -1,0 +1,7 @@
+[codespell]
+skip = ./.git,./.venv,./data,./uv.lock,./openapi.json,./htmlcov,*.lock,*.min.js
+check-filenames =
+check-hidden =
+# Words that look like typos but are intentional identifiers or domain terms.
+ignore-words-list = crate,nin,ba,fo,iam,ot,te,ser,pinecone,chroma,thit,ifset,alle,tenant,tenants
+quiet-level = 2

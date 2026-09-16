@@ -1,0 +1,68 @@
+# Mirrors the lint / format / spell / secret jobs in .github/workflows/ci.yml so
+# failures surface before you push.  Install once:  pre-commit install
+default_language_version:
+  python: python3.12
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        args: ["--maxkb=1024"]
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: check-json
+        exclude: ^openapi\.json$
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.6
+    hooks:
+      - id: ruff
+        name: ruff check (lint + import sorting)
+        args: ["--fix", "--exit-non-zero-on-fix"]
+      - id: ruff-format
+        name: ruff format
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        additional_dependencies: ["tomli"]
+        args: ["--config=.codespellrc"]
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.23.3
+    hooks:
+      - id: gitleaks
+        name: gitleaks (secret scanning)
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.2
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml"]
+        additional_dependencies: ["bandit[toml]"]
+        exclude: ^tests/
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy --strict (agent_service)
+        entry: .venv/bin/mypy
+        args: ["--strict", "agent_service"]
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+
+      - id: openapi-drift
+        name: openapi.json is up to date
+        entry: .venv/bin/python scripts/export_openapi.py --check
+        language: system
+        pass_filenames: false
+        files: ^(agent_service/|scripts/export_openapi\.py|pyproject\.toml)

@@ -1,0 +1,1957 @@
+{
+  "components": {
+    "schemas": {
+      "Body_ingest_files_kb__domain__ingest_files_post": {
+        "properties": {
+          "files": {
+            "description": "Documents to ingest.",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Files",
+            "type": "array"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "JSON object, e.g. {\"module\":\"payroll\"}",
+            "title": "Tags"
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "title": "Body_ingest_files_kb__domain__ingest_files_post",
+        "type": "object"
+      },
+      "ChatRequest": {
+        "description": "A single agent turn.",
+        "examples": [
+          {
+            "domains": [
+              "hr"
+            ],
+            "filters": {
+              "module": "leave"
+            },
+            "message": "How many leave days do I accrue each month?"
+          }
+        ],
+        "properties": {
+          "domains": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Restrict retrieval to these domains. Omit to let the router choose from the domains the token may read.",
+            "title": "Domains"
+          },
+          "filters": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Metadata filter applied to every retrieval.",
+            "title": "Filters"
+          },
+          "message": {
+            "description": "User message.",
+            "maxLength": 8000,
+            "minLength": 1,
+            "title": "Message",
+            "type": "string"
+          },
+          "thread_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Continue an existing conversation; omit to start a new one.",
+            "title": "Thread Id"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest",
+        "type": "object"
+      },
+      "ChatResponse": {
+        "description": "Agent answer with its sources.",
+        "examples": [
+          {
+            "answer": "You accrue 1.75 days of paid leave per completed month. [1]",
+            "domains_searched": [
+              "hr",
+              "company"
+            ],
+            "routing_reason": "question mentions leave policy",
+            "sources": [],
+            "thread_id": "a3c9f0...",
+            "tool_calls": []
+          }
+        ],
+        "properties": {
+          "answer": {
+            "title": "Answer",
+            "type": "string"
+          },
+          "domains_searched": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Domains Searched",
+            "type": "array"
+          },
+          "routing_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Routing Reason"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "title": "Sources",
+            "type": "array"
+          },
+          "thread_id": {
+            "title": "Thread Id",
+            "type": "string"
+          },
+          "tool_calls": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Tool Calls",
+            "type": "array"
+          }
+        },
+        "required": [
+          "answer",
+          "thread_id",
+          "domains_searched"
+        ],
+        "title": "ChatResponse",
+        "type": "object"
+      },
+      "DeleteDocumentsRequest": {
+        "description": "Delete by explicit ids or by metadata filter (at least one is required).",
+        "examples": [
+          {
+            "filter": {
+              "doc_id": "9b1f0c2a",
+              "module": "leave"
+            }
+          },
+          {
+            "ids": [
+              "6f1b9c..."
+            ]
+          }
+        ],
+        "properties": {
+          "filter": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Metadata filter, e.g. {'doc_id': '...'} or {'module': ['a','b']}.",
+            "title": "Filter"
+          },
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Chunk ids (content hashes).",
+            "title": "Ids"
+          }
+        },
+        "title": "DeleteDocumentsRequest",
+        "type": "object"
+      },
+      "DeleteResponse": {
+        "description": "How many chunks were removed.",
+        "properties": {
+          "deleted": {
+            "title": "Deleted",
+            "type": "integer"
+          },
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain",
+          "deleted"
+        ],
+        "title": "DeleteResponse",
+        "type": "object"
+      },
+      "DomainInfo": {
+        "description": "A configured domain and whether it currently holds data.",
+        "properties": {
+          "configured": {
+            "default": true,
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "exists": {
+            "description": "Whether a physical collection/namespace exists.",
+            "title": "Exists",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "domain",
+          "exists"
+        ],
+        "title": "DomainInfo",
+        "type": "object"
+      },
+      "DomainStats": {
+        "description": "Per-domain inventory information.",
+        "properties": {
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "embedding_dimension": {
+            "title": "Embedding Dimension",
+            "type": "integer"
+          },
+          "embedding_model": {
+            "title": "Embedding Model",
+            "type": "string"
+          },
+          "extra": {
+            "additionalProperties": true,
+            "title": "Extra",
+            "type": "object"
+          },
+          "physical_name": {
+            "title": "Physical Name",
+            "type": "string"
+          },
+          "store": {
+            "title": "Store",
+            "type": "string"
+          },
+          "vector_count": {
+            "title": "Vector Count",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "domain",
+          "store",
+          "physical_name",
+          "vector_count",
+          "embedding_model",
+          "embedding_dimension"
+        ],
+        "title": "DomainStats",
+        "type": "object"
+      },
+      "DomainsResponse": {
+        "description": "All configured domains plus their physical presence.",
+        "examples": [
+          {
+            "domains": [
+              {
+                "configured": true,
+                "domain": "hr",
+                "exists": true
+              }
+            ],
+            "store": "chroma",
+            "tenant_mode": "off"
+          }
+        ],
+        "properties": {
+          "domains": {
+            "items": {
+              "$ref": "#/components/schemas/DomainInfo"
+            },
+            "title": "Domains",
+            "type": "array"
+          },
+          "store": {
+            "title": "Store",
+            "type": "string"
+          },
+          "tenant_mode": {
+            "title": "Tenant Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "store",
+          "tenant_mode",
+          "domains"
+        ],
+        "title": "DomainsResponse",
+        "type": "object"
+      },
+      "ErrorBody": {
+        "description": "Inner payload of every error response.",
+        "properties": {
+          "code": {
+            "description": "Stable machine readable error code.",
+            "title": "Code",
+            "type": "string"
+          },
+          "details": {
+            "additionalProperties": true,
+            "title": "Details",
+            "type": "object"
+          },
+          "message": {
+            "description": "Human readable explanation.",
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Correlation id, also in X-Request-ID.",
+            "title": "Request Id"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ErrorBody",
+        "type": "object"
+      },
+      "ErrorResponse": {
+        "description": "Consistent error envelope used by every non-2xx response.",
+        "examples": [
+          {
+            "error": {
+              "code": "forbidden",
+              "details": {
+                "required_scope": "kb:hr:write"
+              },
+              "message": "Insufficient scope for domain 'hr'",
+              "request_id": "3f1c1a0e9f4b4c0a8f2a"
+            }
+          }
+        ],
+        "properties": {
+          "error": {
+            "$ref": "#/components/schemas/ErrorBody"
+          }
+        },
+        "required": [
+          "error"
+        ],
+        "title": "ErrorResponse",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "description": "Liveness payload.",
+        "examples": [
+          {
+            "service": "agent-service",
+            "status": "ok",
+            "version": "0.1.0"
+          }
+        ],
+        "properties": {
+          "service": {
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "const": "ok",
+            "default": "ok",
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "service",
+          "version"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "IngestResponse": {
+        "description": "Either an inline summary or a background job handle.",
+        "examples": [
+          {
+            "mode": "sync",
+            "result": {
+              "chunk_ids": [
+                "6f1b..."
+              ],
+              "chunks_added": 3,
+              "documents_processed": 1,
+              "domain": "hr",
+              "duplicates_skipped": 0,
+              "errors": [],
+              "sources": [
+                "hr-policy-2026"
+              ]
+            }
+          }
+        ],
+        "properties": {
+          "job_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Poll GET /kb/jobs/{id} when mode=async.",
+            "title": "Job Id"
+          },
+          "mode": {
+            "description": "Whether ingestion ran inline or queued.",
+            "enum": [
+              "sync",
+              "async"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/IngestResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Present when mode=sync."
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "title": "IngestResponse",
+        "type": "object"
+      },
+      "IngestResult": {
+        "description": "Summary of one ingestion run.",
+        "properties": {
+          "chunk_ids": {
+            "description": "Ids of the stored chunks.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Chunk Ids",
+            "type": "array"
+          },
+          "chunks_added": {
+            "description": "Chunks embedded and stored.",
+            "title": "Chunks Added",
+            "type": "integer"
+          },
+          "documents_processed": {
+            "description": "Number of source documents loaded.",
+            "title": "Documents Processed",
+            "type": "integer"
+          },
+          "domain": {
+            "description": "Target knowledge base domain.",
+            "title": "Domain",
+            "type": "string"
+          },
+          "duplicates_skipped": {
+            "description": "Chunks already present (same content hash).",
+            "title": "Duplicates Skipped",
+            "type": "integer"
+          },
+          "errors": {
+            "description": "Per-source failures, if any.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "sources": {
+            "description": "Source identifiers processed.",
+            "items": {
+              "type": "string"
+            },
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "domain",
+          "documents_processed",
+          "chunks_added",
+          "duplicates_skipped"
+        ],
+        "title": "IngestResult",
+        "type": "object"
+      },
+      "IngestTextRequest": {
+        "description": "Ingest a raw string into a domain.",
+        "examples": [
+          {
+            "source": "hr-policy-2026",
+            "tags": {
+              "fiscal_year": 2026,
+              "module": "leave"
+            },
+            "text": "Employees accrue 1.75 days of paid leave per completed month."
+          }
+        ],
+        "properties": {
+          "source": {
+            "default": "inline-text",
+            "description": "Provenance label stored on every chunk.",
+            "maxLength": 512,
+            "title": "Source",
+            "type": "string"
+          },
+          "tags": {
+            "additionalProperties": true,
+            "description": "Extra metadata stamped on every chunk.",
+            "title": "Tags",
+            "type": "object"
+          },
+          "text": {
+            "description": "Raw text to chunk, embed and store.",
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "text"
+        ],
+        "title": "IngestTextRequest",
+        "type": "object"
+      },
+      "IngestUrlsRequest": {
+        "description": "Ingest one or more public URLs.",
+        "examples": [
+          {
+            "tags": {
+              "module": "policies"
+            },
+            "urls": [
+              "https://example.com/handbook"
+            ]
+          }
+        ],
+        "properties": {
+          "tags": {
+            "additionalProperties": true,
+            "title": "Tags",
+            "type": "object"
+          },
+          "urls": {
+            "description": "HTTP(S) URLs to fetch.",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 50,
+            "minItems": 1,
+            "title": "Urls",
+            "type": "array"
+          }
+        },
+        "required": [
+          "urls"
+        ],
+        "title": "IngestUrlsRequest",
+        "type": "object"
+      },
+      "Job": {
+        "description": "A unit of background work and its outcome.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "status": {
+            "$ref": "#/components/schemas/JobStatus",
+            "default": "queued"
+          },
+          "submitted_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submitted By"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "domain",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "Job",
+        "type": "object"
+      },
+      "JobResponse": {
+        "description": "Status of a background ingestion job.",
+        "properties": {
+          "job": {
+            "$ref": "#/components/schemas/Job"
+          }
+        },
+        "required": [
+          "job"
+        ],
+        "title": "JobResponse",
+        "type": "object"
+      },
+      "JobStatus": {
+        "description": "Lifecycle of an ingestion job.",
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed"
+        ],
+        "title": "JobStatus",
+        "type": "string"
+      },
+      "ReadyResponse": {
+        "description": "Readiness payload including backend checks.",
+        "examples": [
+          {
+            "domains": [
+              "hr",
+              "finance",
+              "engineering",
+              "it",
+              "company"
+            ],
+            "embedding_dimension": 1536,
+            "embedding_model": "text-embedding-3-small",
+            "status": "ready",
+            "store": "chroma",
+            "store_healthy": true
+          }
+        ],
+        "properties": {
+          "domains": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Domains",
+            "type": "array"
+          },
+          "embedding_dimension": {
+            "title": "Embedding Dimension",
+            "type": "integer"
+          },
+          "embedding_model": {
+            "title": "Embedding Model",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "ready",
+              "degraded"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "store": {
+            "title": "Store",
+            "type": "string"
+          },
+          "store_healthy": {
+            "title": "Store Healthy",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "status",
+          "store",
+          "store_healthy",
+          "embedding_model",
+          "embedding_dimension",
+          "domains"
+        ],
+        "title": "ReadyResponse",
+        "type": "object"
+      },
+      "ReindexResponse": {
+        "description": "Result of an atomic re-embed + swap.",
+        "properties": {
+          "documents_reindexed": {
+            "title": "Documents Reindexed",
+            "type": "integer"
+          },
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "embedding_dimension": {
+            "title": "Embedding Dimension",
+            "type": "integer"
+          },
+          "embedding_model": {
+            "title": "Embedding Model",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain",
+          "documents_reindexed",
+          "embedding_model",
+          "embedding_dimension"
+        ],
+        "title": "ReindexResponse",
+        "type": "object"
+      },
+      "SearchHit": {
+        "description": "A single ranked chunk returned by a similarity search.",
+        "properties": {
+          "content": {
+            "description": "Chunk text.",
+            "title": "Content",
+            "type": "string"
+          },
+          "domain": {
+            "description": "Knowledge base domain the chunk belongs to.",
+            "title": "Domain",
+            "type": "string"
+          },
+          "id": {
+            "description": "Deterministic chunk id (its content hash).",
+            "title": "Id",
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "score": {
+            "description": "Similarity score, higher is better (cosine).",
+            "title": "Score",
+            "type": "number"
+          }
+        },
+        "required": [
+          "id",
+          "content",
+          "score",
+          "domain"
+        ],
+        "title": "SearchHit",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "description": "Ranked chunks for a query.",
+        "examples": [
+          {
+            "domain": "hr",
+            "hits": [
+              {
+                "content": "Employees accrue 1.75 days of paid leave per month.",
+                "domain": "hr",
+                "id": "6f1b9c...",
+                "metadata": {
+                  "module": "leave",
+                  "source": "hr-policy-2026"
+                },
+                "score": 0.8123
+              }
+            ],
+            "k": 5,
+            "query": "how much leave do I accrue"
+          }
+        ],
+        "properties": {
+          "domain": {
+            "title": "Domain",
+            "type": "string"
+          },
+          "hits": {
+            "items": {
+              "$ref": "#/components/schemas/SearchHit"
+            },
+            "title": "Hits",
+            "type": "array"
+          },
+          "k": {
+            "title": "K",
+            "type": "integer"
+          },
+          "query": {
+            "title": "Query",
+            "type": "string"
+          }
+        },
+        "required": [
+          "domain",
+          "query",
+          "k",
+          "hits"
+        ],
+        "title": "SearchResponse",
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "BearerJWT": {
+        "bearerFormat": "JWT",
+        "description": "JWT signed with the shared secret (`JWT_SECRET_KEY`, HS256 by default). Mint a development token with `python scripts/mint_token.py`.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "contact": {
+      "email": "platform@example.com",
+      "name": "Platform Engineering"
+    },
+    "description": "Retrieval-augmented agent service for the NexusOne ERP.\n\n**Domain separated knowledge bases.** Each business domain (`hr`, `finance`,\n`engineering`, `it`, `company`, ...) is an isolated index. A query never crosses\ndomains unless the caller asks for it, and access is granted per domain through\nJWT scopes of the form `kb:<domain>:read` / `kb:<domain>:write`.\n\n**Pluggable everything.** The vector store (`chroma` | `faiss` | `pinecone`),\nthe chat model (`openai` | `anthropic`) and the embedding model\n(`openai` | `huggingface`) are selected purely through environment variables.\n\n**Authentication.** Every endpoint except `/health`, `/ready` and the docs\nrequires `Authorization: Bearer <jwt>`; tokens are signed by the calling backend\nwith a shared HMAC secret. Click **Authorize** to try the endpoints below.",
+    "license": {
+      "identifier": "MIT",
+      "name": "MIT"
+    },
+    "title": "NexusOne Agent Service",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/agent/chat": {
+      "post": {
+        "description": "Runs the LangGraph agent: route to the relevant domain(s), retrieve, then answer with tool calls as needed.\n\n* `domains` is optional - when omitted the router picks from the domains the token may read, and the `company` domain stays eligible as a general fallback.\n* `thread_id` continues an existing conversation (state is kept by the checkpointer).\n* Requires scope `agent:chat` plus `kb:<domain>:read` for each domain used.",
+        "operationId": "chat_agent_chat_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Ask the agent a question",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/agent/chat/stream": {
+      "post": {
+        "description": "Server-Sent Events stream of the same run as `POST /agent/chat`.\n\nEvent payloads are JSON objects with a `type` field:\n`start`, `routing`, `sources`, `tool_start`, `tool_end`, `token`, `done`, `error`.\n\nRequires scope `agent:chat`.",
+        "operationId": "chat_stream_agent_chat_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {
+                "example": "data: {\"type\":\"start\",\"thread_id\":\"a3c9f0\"}\n\ndata: {\"type\":\"token\",\"content\":\"You \"}\n\ndata: {\"type\":\"done\",\"thread_id\":\"a3c9f0\",\"answer\":\"You accrue ...\"}\n\n",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "SSE stream."
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unexpected failure."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Ask the agent a question (SSE stream)",
+        "tags": [
+          "agent"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "description": "Returns 200 as soon as the process is serving traffic. Unauthenticated so orchestrators can use it without credentials.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Liveness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/kb/domains": {
+      "get": {
+        "description": "Returns every domain configured through `KB_DOMAINS` together with whether a physical collection/namespace currently exists for it. Requires `kb:admin`.",
+        "operationId": "list_domains_kb_domains_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "List knowledge base domains",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/kb/jobs/{job_id}": {
+      "get": {
+        "description": "Poll the status of an ingestion job returned by an `mode=async` ingest call.",
+        "operationId": "get_job_kb_jobs__job_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown job."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Get a background ingestion job",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/kb/{domain}": {
+      "delete": {
+        "description": "Deletes the whole collection/namespace for a domain. Requires `kb:admin`.",
+        "operationId": "drop_domain_kb__domain__delete",
+        "parameters": [
+          {
+            "description": "Business domain, must be one of KB_DOMAINS.",
+            "in": "path",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "description": "Business domain, must be one of KB_DOMAINS.",
+              "examples": [
+                "hr",
+                "finance"
+              ],
+              "title": "Domain",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Drop an entire domain",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/kb/{domain}/documents": {
+      "delete": {
+        "description": "Removes chunks by explicit id or by metadata filter (for example every chunk of one `doc_id`). Requires scope `kb:<domain>:write`.",
+        "operationId": "delete_documents_kb__domain__documents_delete",
+        "parameters": [
+          {
+            "description": "Business domain, must be one of KB_DOMAINS.",
+            "in": "path",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "description": "Business domain, must be one of KB_DOMAINS.",
+              "examples": [
+                "hr",
+                "finance"
+              ],
+              "title": "Domain",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteDocumentsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Delete chunks from a domain",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/kb/{domain}/ingest/files": {
+      "post": {
+        "description": "Accepts a multipart upload with one or more files (`pdf`, `docx`, `txt`, `md`, `csv`, `json`, `html`). Files are chunked, embedded and de-duplicated by content hash. Small batches run inline; anything above `BACKGROUND_INGEST_THRESHOLD` returns a job id to poll at `GET /kb/jobs/{id}`.\n\nRequires scope `kb:<domain>:write`.",
+        "operationId": "ingest_files_kb__domain__ingest_files_post",
+        "parameters": [
+          {
+            "description": "Business domain, must be one of KB_DOMAINS.",
+            "in": "path",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "description": "Business domain, must be one of KB_DOMAINS.",
+              "examples": [
+                "hr",
+                "finance"
+              ],
+              "title": "Domain",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_ingest_files_kb__domain__ingest_files_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Ingest uploaded files into a domain",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/kb/{domain}/ingest/text": {
+      "post": {
+        "description": "Chunks and embeds a string. Useful for ERP records, generated summaries or policy snippets. Requires scope `kb:<domain>:write`.",
+        "operationId": "ingest_text_kb__domain__ingest_text_post",
+        "parameters": [
+          {
+            "description": "Business domain, must be one of KB_DOMAINS.",
+            "in": "path",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "description": "Business domain, must be one of KB_DOMAINS.",
+              "examples": [
+                "hr",
+                "finance"
+              ],
+              "title": "Domain",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestTextRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Ingest raw text into a domain",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/kb/{domain}/ingest/urls": {
+      "post": {
+        "description": "Fetches each URL, extracts readable text and ingests it. URLs resolving to private, loopback or link-local addresses are rejected (SSRF guard). Requires scope `kb:<domain>:write`.",
+        "operationId": "ingest_urls_kb__domain__ingest_urls_post",
+        "parameters": [
+          {
+            "description": "Business domain, must be one of KB_DOMAINS.",
+            "in": "path",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "description": "Business domain, must be one of KB_DOMAINS.",
+              "examples": [
+                "hr",
+                "finance"
+              ],
+              "title": "Domain",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngestUrlsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngestResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Ingest web pages into a domain",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/kb/{domain}/reindex": {
+      "post": {
+        "description": "Reads every chunk, re-embeds it with the currently configured embedding model into a staging collection, then swaps the staging collection over the live one. Use after changing `EMBEDDING_MODEL`. Requires `kb:admin`.",
+        "operationId": "reindex_kb__domain__reindex_post",
+        "parameters": [
+          {
+            "description": "Business domain, must be one of KB_DOMAINS.",
+            "in": "path",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "description": "Business domain, must be one of KB_DOMAINS.",
+              "examples": [
+                "hr",
+                "finance"
+              ],
+              "title": "Domain",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReindexResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Re-embed a domain and swap it in atomically",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/kb/{domain}/search": {
+      "get": {
+        "description": "Returns the top `k` chunks for `q`, ranked by cosine similarity, with their metadata. An optional `filter` query parameter carries a JSON metadata filter, for example `{\"module\":\"payroll\"}`. Requires scope `kb:<domain>:read`.",
+        "operationId": "search_kb__domain__search_get",
+        "parameters": [
+          {
+            "description": "Business domain, must be one of KB_DOMAINS.",
+            "in": "path",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "description": "Business domain, must be one of KB_DOMAINS.",
+              "examples": [
+                "hr",
+                "finance"
+              ],
+              "title": "Domain",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Query text.",
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "description": "Query text.",
+              "examples": [
+                "leave accrual"
+              ],
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Number of chunks to return.",
+            "in": "query",
+            "name": "k",
+            "required": false,
+            "schema": {
+              "default": 5,
+              "description": "Number of chunks to return.",
+              "maximum": 50,
+              "minimum": 1,
+              "title": "K",
+              "type": "integer"
+            }
+          },
+          {
+            "description": "JSON metadata filter, e.g. {\"module\":\"payroll\"}",
+            "in": "query",
+            "name": "filter",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "JSON metadata filter, e.g. {\"module\":\"payroll\"}",
+              "title": "Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Search one domain",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/kb/{domain}/stats": {
+      "get": {
+        "description": "Store type, physical collection/namespace name, vector count, embedding model and dimension. Requires `kb:admin`.",
+        "operationId": "domain_stats_kb__domain__stats_get",
+        "parameters": [
+          {
+            "description": "Business domain, must be one of KB_DOMAINS.",
+            "in": "path",
+            "name": "domain",
+            "required": true,
+            "schema": {
+              "description": "Business domain, must be one of KB_DOMAINS.",
+              "examples": [
+                "hr",
+                "finance"
+              ],
+              "title": "Domain",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainStats"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Missing, malformed or expired bearer token."
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Token lacks the required scope."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "Unknown domain or invalid request body."
+          }
+        },
+        "security": [
+          {
+            "BearerJWT": []
+          }
+        ],
+        "summary": "Domain statistics",
+        "tags": [
+          "kb"
+        ]
+      }
+    },
+    "/ready": {
+      "get": {
+        "description": "Verifies that the configured vector store answers and that the embedding model dimension is known. Returns `status=degraded` when the store is unreachable so load balancers can drain the instance.",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readiness probe",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  },
+  "servers": [
+    {
+      "description": "This deployment",
+      "url": "/"
+    }
+  ],
+  "tags": [
+    {
+      "description": "Ingest, search, inspect and delete knowledge base content. All routes are domain scoped and require `kb:<domain>:read` or `kb:<domain>:write`; administrative routes require `kb:admin`.",
+      "name": "kb"
+    },
+    {
+      "description": "Conversational retrieval agent (LangGraph). Supports multi-domain routing, reciprocal-rank-fusion retrieval, tool calling and SSE streaming. Requires `agent:chat`.",
+      "name": "agent"
+    },
+    {
+      "description": "Unauthenticated liveness and readiness probes for orchestrators.",
+      "name": "health"
+    }
+  ]
+}

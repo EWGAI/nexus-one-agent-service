@@ -1,0 +1,86 @@
+name: nexusone-agent-service
+
+services:
+  # ---------------------------------------------------------------------------
+  # Default: the service with an embedded, persistent Chroma store.
+  #   docker compose up --build
+  # ---------------------------------------------------------------------------
+  agent-service:
+    build:
+      context: .
+      args:
+        EXTRAS: "chroma,faiss"
+    image: nexusone/agent-service:local
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: dev
+      LOG_JSON: "true"
+      ENABLE_DOCS: "true"
+
+      # Authentication - override with a real secret.
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-local-development-secret-change-me-32chars}
+
+      # Domains
+      KB_DOMAINS: ${KB_DOMAINS:-hr,finance,engineering,it,company}
+      KB_FALLBACK_DOMAIN: company
+      TENANT_MODE: ${TENANT_MODE:-off}
+
+      # Store: embedded Chroma by default. `--profile server` overrides this.
+      VECTOR_STORE: ${VECTOR_STORE:-chroma}
+      CHROMA_PERSIST_DIR: /data/chroma
+      FAISS_INDEX_PATH: /data/faiss
+
+      # Providers: offline defaults so the stack runs with no API keys.
+      LLM_PROVIDER: ${LLM_PROVIDER:-fake}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-fake}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    volumes:
+      - agent-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------------------
+  # Optional standalone Chroma server:
+  #   docker compose --profile server up --build
+  # ---------------------------------------------------------------------------
+  chroma:
+    image: chromadb/chroma:0.6.3
+    profiles: ["server"]
+    ports:
+      - "8001:8000"
+    environment:
+      IS_PERSISTENT: "TRUE"
+      ANONYMIZED_TELEMETRY: "FALSE"
+    volumes:
+      - chroma-data:/chroma/chroma
+    healthcheck:
+      test: ["CMD", "/bin/bash", "-c", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8000'"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  agent-service-remote:
+    extends:
+      service: agent-service
+    profiles: ["server"]
+    ports:
+      - "8010:8000"
+    environment:
+      VECTOR_STORE: chroma
+      CHROMA_HOST: chroma
+      CHROMA_PORT: "8000"
+    depends_on:
+      chroma:
+        condition: service_healthy
+
+volumes:
+  agent-data:
+  chroma-data:
