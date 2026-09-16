@@ -34,8 +34,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: pyproject.toml
-      - run: uv python install 3.12
-      - run: uv pip install --system -e ".[dev]"
+      - name: Create virtualenv
+        run: |
+          uv venv --python 3.12
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: uv pip install -e ".[dev]"
       - run: ruff check --output-format=github agent_service tests scripts
 
   format:
@@ -47,8 +50,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: pyproject.toml
-      - run: uv python install 3.12
-      - run: uv pip install --system -e ".[dev]"
+      - name: Create virtualenv
+        run: |
+          uv venv --python 3.12
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: uv pip install -e ".[dev]"
       - run: ruff format --check --diff agent_service tests scripts
 
   typecheck:
@@ -60,8 +66,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: pyproject.toml
-      - run: uv python install 3.12
-      - run: uv pip install --system -e ".[dev]"
+      - name: Create virtualenv
+        run: |
+          uv venv --python 3.12
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: uv pip install -e ".[dev]"
       - run: mypy --strict agent_service
 
   spelling:
@@ -73,8 +82,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: pyproject.toml
-      - run: uv python install 3.12
-      - run: uv pip install --system -e ".[dev]"
+      - name: Create virtualenv
+        run: |
+          uv venv --python 3.12
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: uv pip install -e ".[dev]"
       - name: codespell
         run: codespell agent_service tests scripts README.md .env.example
       - name: typos (alternative spell checker)
@@ -100,9 +112,12 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: pyproject.toml
-      - run: uv python install ${{ matrix.python-version }}
+      - name: Create virtualenv
+        run: |
+          uv venv --python ${{ matrix.python-version }}
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - name: Install (chroma + faiss + pinecone SDK)
-        run: uv pip install --system -e ".[dev,pinecone]"
+        run: uv pip install -e ".[dev,pinecone]"
       - name: Run tests with coverage
         # Chroma and FAISS run locally against the deterministic fake embedding
         # model. Pinecone tests are marked `integration` and self-skip unless the
@@ -140,8 +155,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: pyproject.toml
-      - run: uv python install 3.12
-      - run: uv pip install --system -e ".[dev]"
+      - name: Create virtualenv
+        run: |
+          uv venv --python 3.12
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: uv pip install -e ".[dev]"
       - name: bandit
         run: bandit -c pyproject.toml -r agent_service
       - name: pip-audit
@@ -169,8 +187,11 @@ jobs:
         with:
           enable-cache: true
           cache-dependency-glob: pyproject.toml
-      - run: uv python install 3.12
-      - run: uv pip install --system -e ".[dev]"
+      - name: Create virtualenv
+        run: |
+          uv venv --python 3.12
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
+      - run: uv pip install -e ".[dev]"
       - name: Regenerate and diff openapi.json
         run: |
           python scripts/export_openapi.py --output /tmp/openapi.json
@@ -185,6 +206,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
       - uses: docker/setup-buildx-action@v3
       - name: Build image
         uses: docker/build-push-action@v6
@@ -210,11 +232,12 @@ jobs:
           exit 1
       - name: Smoke test (mint token -> ingest -> search -> chat)
         run: |
-          python -m pip install --quiet PyJWT
+          uv venv /tmp/smoke --python 3.12
+          uv pip install --python /tmp/smoke/bin/python --quiet PyJWT
           bash scripts/smoke_test.sh
         env:
           BASE_URL: http://localhost:8000
-          PYTHON: python
+          PYTHON: /tmp/smoke/bin/python
       - name: Container logs
         if: always()
         run: docker logs agent-service-ci || true
